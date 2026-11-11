@@ -20,6 +20,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NotificationCenter.default.addObserver(self, selector: #selector(screensChanged),
             name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        for name in [Notification.Name.NSSystemTimeZoneDidChange,
+                     Notification.Name("NSSystemClockDidChangeNotification")] {
+            NotificationCenter.default.addObserver(self, selector: #selector(refreshClock), name: name, object: nil)
+        }
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(refreshClock),
+            name: NSWorkspace.didWakeNotification, object: nil)
     }
     private func rebuildMenu() {
         let menu = NSMenu()
@@ -32,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         add(panel.isVisible ? "隐藏时钟" : "显示时钟", #selector(toggleVisible))
         menu.addItem(.separator())
+        add("显示/定位时钟", #selector(showClock))
         add("24 小时制", #selector(toggle24), checked: model.settings.use24Hours)
         add("显示秒", #selector(toggleSeconds), checked: model.settings.showSeconds)
         add("窗口置顶", #selector(toggleTop), checked: model.settings.alwaysOnTop)
@@ -50,11 +57,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         add("退出 TimeFloat", #selector(quit))
         statusItem.menu = menu
+        panel.interactionMenu = menu.copy() as? NSMenu
     }
     @objc private func toggleVisible() {
         if panel.isVisible { panel.orderOut(nil) } else { panel.fitToScreen(); panel.orderFrontRegardless() }
         rebuildMenu()
     }
+    @objc private func showClock() { panel.fitToScreen(); panel.orderFrontRegardless(); rebuildMenu() }
+    @objc private func refreshClock() { DispatchQueue.main.async { self.model.refreshClock() } }
     @objc private func toggle24() { model.settings.use24Hours.toggle() }
     @objc private func toggleSeconds() { model.settings.showSeconds.toggle() }
     @objc private func toggleTop() { model.settings.alwaysOnTop.toggle() }

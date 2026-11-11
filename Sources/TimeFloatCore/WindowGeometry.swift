@@ -2,9 +2,9 @@ import Foundation
 import CoreGraphics
 
 public enum WindowGeometry {
-    public static let defaultWidth: CGFloat = 360
+    public static let defaultWidth: CGFloat = 290
     public static let minimumWidth: CGFloat = 200
-    public static let aspectRatio: CGFloat = 1.92
+    public static let aspectRatio: CGFloat = 290.0 / 150.0
     public static func size(width: CGFloat) -> CGSize {
         let width = width.isFinite ? min(1200, max(minimumWidth, width)) : defaultWidth
         return CGSize(width: width, height: width / aspectRatio)

@@ -14,6 +14,18 @@ final class CoreTests: XCTestCase {
         settings.use24Hours = false
         XCTAssertEqual(ClockFormatter(settings: settings, locale: locale, timeZone: zone).timeString(date), "3:04 PM")
     }
+    func testMidnightYearBoundaryAndTimeZones() {
+        let date = ISO8601DateFormatter().date(from: "2026-12-31T23:59:59Z")!
+        let utc = ClockFormatter(settings: ClockSettings(), timeZone: TimeZone(secondsFromGMT: 0)!)
+        XCTAssertEqual(utc.timeString(date), "23:59:59")
+        XCTAssertEqual(utc.dateString(date), "Thursday, December 31")
+        XCTAssertEqual(utc.timeString(date.addingTimeInterval(1)), "00:00:00")
+        XCTAssertEqual(utc.dateString(date.addingTimeInterval(1)), "Friday, January 1")
+        let shanghai = ClockFormatter(settings: ClockSettings(), timeZone: TimeZone(secondsFromGMT: 28800)!)
+        XCTAssertEqual(shanghai.timeString(date), "07:59:59")
+        XCTAssertEqual(shanghai.dateString(date), "Friday, January 1")
+    }
+
     func testSettingsPersistAndRecoverFromCorruptData() {
         let name = "TimeFloatTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: name)!

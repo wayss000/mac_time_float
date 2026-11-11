@@ -2,54 +2,71 @@ import AppKit
 import SwiftUI
 import TimeFloatCore
 
-/// A native drag target: borderless panels do not reliably expose system resize edges.
-struct ResizeHandle: NSViewRepresentable {
-    func makeNSView(context: Context) -> ResizeHandleView { ResizeHandleView() }
-    func updateNSView(_ view: ResizeHandleView, context: Context) {}
+/// Own pointer interaction so borderless windows support both dragging and resizing.
+struct WindowInteractionSurface: NSViewRepresentable {
+    func makeNSView(context: Context) -> WindowInteractionView { WindowInteractionView() }
+    func updateNSView(_ view: WindowInteractionView, context: Context) {}
 }
 
-final class ResizeHandleView: NSView {
+final class WindowInteractionView: NSView {
     override var mouseDownCanMoveWindow: Bool { false }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .crosshair)
+    private func edges(at point: NSPoint) -> (left: Bool, right: Bool, bottom: Bool, top: Bool) {
+        let corner = CGFloat(30)
+        let nearX = point.x < corner || point.x > bounds.width - corner
+        let nearY = point.y < corner || point.y > bounds.height - corner
+        let margin: CGFloat = nearX && nearY ? corner : 10
+        return (point.x < margin, point.x > bounds.width - margin,
+                point.y < margin, point.y > bounds.height - margin)
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        NSColor.secondaryLabelColor.withAlphaComponent(0.65).setStroke()
-        let path = NSBezierPath()
-        path.lineWidth = 2
-        path.lineCapStyle = .round
-        for offset in [CGFloat(0), 6, 12] {
-            path.move(to: NSPoint(x: 7 + offset, y: 5))
-            path.line(to: NSPoint(x: 21, y: 19 - offset))
+    override func resetCursorRects() {
+        let w = bounds.width, h = bounds.height
+        addCursorRect(NSRect(x: 0, y: 30, width: 10, height: max(0, h - 60)), cursor: .resizeLeftRight)
+        addCursorRect(NSRect(x: w - 10, y: 30, width: 10, height: max(0, h - 60)), cursor: .resizeLeftRight)
+        addCursorRect(NSRect(x: 30, y: 0, width: max(0, w - 60), height: 10), cursor: .resizeUpDown)
+        addCursorRect(NSRect(x: 30, y: h - 10, width: max(0, w - 60), height: 10), cursor: .resizeUpDown)
+        for x in [CGFloat(0), w - 30] {
+            for y in [CGFloat(0), h - 30] {
+                addCursorRect(NSRect(x: x, y: y, width: 30, height: 30), cursor: .crosshair)
+            }
         }
-        path.stroke()
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        (window as? ClockPanel)?.interactionMenu
     }
 
     override func mouseDown(with event: NSEvent) {
         guard let window else { return }
+        let edge = edges(at: convert(event.locationInWindow, from: nil))
+        guard edge.left || edge.right || edge.bottom || edge.top else {
+            window.performDrag(with: event)
+            (window as? ClockPanel)?.fitToScreen()
+            return
+        }
         let initialFrame = window.frame
         let initialMouse = NSEvent.mouseLocation
         let ratio = WindowGeometry.aspectRatio
         while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
             if next.type == .leftMouseUp { break }
             let mouse = NSEvent.mouseLocation
-            let dx = mouse.x - initialMouse.x
-            let dy = mouse.y - initialMouse.y
-            // Project diagonal motion onto the fixed aspect ratio, anchoring the top left.
-            let deltaWidth = (dx - dy / ratio) / (1 + 1 / (ratio * ratio))
-            var size = WindowGeometry.size(width: initialFrame.width + deltaWidth)
-            if let screen = window.screen {
-                let availableWidth = max(1, screen.visibleFrame.maxX - initialFrame.minX)
-                let availableHeight = max(1, initialFrame.maxY - screen.visibleFrame.minY)
-                let limit = min(1, min(availableWidth / size.width, availableHeight / size.height))
-                size.width *= limit
-                size.height *= limit
+            let dx = (mouse.x - initialMouse.x) * (edge.left ? -1 : 1)
+            let dy = (mouse.y - initialMouse.y) * (edge.bottom ? -1 : 1)
+            let horizontal = edge.left || edge.right
+            let vertical = edge.bottom || edge.top
+            let delta: CGFloat
+            if horizontal && vertical {
+                delta = (dx + dy / ratio) / (1 + 1 / (ratio * ratio))
+            } else {
+                delta = horizontal ? dx : dy * ratio
             }
-            window.setFrame(NSRect(x: initialFrame.minX, y: initialFrame.maxY - size.height,
-                                   width: size.width, height: size.height), display: true)
+            let size = WindowGeometry.size(width: initialFrame.width + delta)
+            let x = edge.left ? initialFrame.maxX - size.width : initialFrame.minX
+            let y = edge.bottom ? initialFrame.maxY - size.height : initialFrame.minY
+            window.setFrame(NSRect(origin: NSPoint(x: x, y: y), size: size), display: true)
         }
+        (window as? ClockPanel)?.fitToScreen()
     }
 }

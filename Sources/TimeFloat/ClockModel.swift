@@ -6,7 +6,8 @@ final class ClockModel: ObservableObject {
         didSet { store.save(settings); formatter = ClockFormatter(settings: settings) }
     }
     private let store = SettingsStore()
-    private(set) var formatter: ClockFormatter
+    @Published private(set) var formatter: ClockFormatter
+    func refreshClock() { formatter = ClockFormatter(settings: settings) }
     init() {
         let saved = SettingsStore().load()
         settings = saved

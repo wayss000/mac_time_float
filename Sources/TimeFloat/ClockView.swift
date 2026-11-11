@@ -4,6 +4,7 @@ struct GlassBackground: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = .hudWindow
+        view.appearance = NSAppearance(named: .darkAqua)
         view.blendingMode = .behindWindow
         view.state = .active
         return view
@@ -35,19 +36,15 @@ struct ClockView: View {
             }
             .background {
                 GlassBackground()
-                    .overlay(Color.white.opacity(model.settings.opacity * 0.45))
+                    .overlay(Color.black.opacity(model.settings.opacity * 0.7))
                     .overlay(LinearGradient(colors: [.pink.opacity(0.09), .blue.opacity(0.08)], startPoint: .bottomLeading, endPoint: .topTrailing))
             }
             .clipShape(RoundedRectangle(cornerRadius: width * 0.105, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: width * 0.105, style: .continuous)
                 .strokeBorder(.primary.opacity(0.2), lineWidth: 1))
-            .overlay(alignment: .bottomTrailing) {
-                ResizeHandle()
-                    .frame(width: 26, height: 26)
-                    .padding(12)
-                    .help("拖动调整时钟大小")
-            }
+            .overlay { WindowInteractionSurface() }
         }
+        .environment(\.colorScheme, .dark)
         .accessibilityLabel("TimeFloat 时钟")
     }
 }
