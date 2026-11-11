@@ -1,0 +1,35 @@
+name: Build macOS app
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: swift test
+      - name: Build Apple Silicon app
+        run: scripts/build-app.sh arm64
+      - name: Build Intel app
+        run: scripts/build-app.sh x86_64
+      - name: Verify architectures
+        run: |
+          lipo -verify_arch arm64 build/arm64/TimeFloat.app/Contents/MacOS/TimeFloat
+          lipo -verify_arch x86_64 build/x86_64/TimeFloat.app/Contents/MacOS/TimeFloat
+      - name: Upload apps
+        uses: actions/upload-artifact@v4
+        with:
+          name: TimeFloat-macOS
+          path: build/TimeFloat-macOS-*.zip
+          if-no-files-found: error
+          retention-days: 30
