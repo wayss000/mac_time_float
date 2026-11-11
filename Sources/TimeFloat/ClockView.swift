@@ -41,6 +41,12 @@ struct ClockView: View {
             .clipShape(RoundedRectangle(cornerRadius: width * 0.105, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: width * 0.105, style: .continuous)
                 .strokeBorder(.primary.opacity(0.2), lineWidth: 1))
+            .overlay(alignment: .bottomTrailing) {
+                ResizeHandle()
+                    .frame(width: 26, height: 26)
+                    .padding(12)
+                    .help("拖动调整时钟大小")
+            }
         }
         .accessibilityLabel("TimeFloat 时钟")
     }

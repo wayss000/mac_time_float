@@ -2,9 +2,11 @@ import Foundation
 import CoreGraphics
 
 public enum WindowGeometry {
+    public static let defaultWidth: CGFloat = 360
+    public static let minimumWidth: CGFloat = 200
     public static let aspectRatio: CGFloat = 1.92
     public static func size(width: CGFloat) -> CGSize {
-        let width = width.isFinite ? min(1200, max(300, width)) : 600
+        let width = width.isFinite ? min(1200, max(minimumWidth, width)) : defaultWidth
         return CGSize(width: width, height: width / aspectRatio)
     }
     public static func fitted(_ frame: CGRect, to screen: CGRect) -> CGRect {

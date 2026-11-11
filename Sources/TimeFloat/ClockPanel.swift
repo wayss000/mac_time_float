@@ -5,7 +5,7 @@ import TimeFloatCore
 final class ClockPanel: NSPanel, NSWindowDelegate {
     override var canBecomeKey: Bool { true }
     init(model: ClockModel) {
-        super.init(contentRect: CGRect(origin: .zero, size: WindowGeometry.size(width: 640)),
+        super.init(contentRect: CGRect(origin: .zero, size: WindowGeometry.size(width: WindowGeometry.defaultWidth)),
                    styleMask: [.borderless, .resizable, .nonactivatingPanel], backing: .buffered, defer: false)
         isOpaque = false
         backgroundColor = .clear
@@ -14,9 +14,9 @@ final class ClockPanel: NSPanel, NSWindowDelegate {
         hidesOnDeactivate = false
         isReleasedWhenClosed = false
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        contentMinSize = WindowGeometry.size(width: 300)
+        contentMinSize = WindowGeometry.size(width: WindowGeometry.minimumWidth)
         contentMaxSize = WindowGeometry.size(width: 1200)
-        contentAspectRatio = WindowGeometry.size(width: 640)
+        contentAspectRatio = WindowGeometry.size(width: WindowGeometry.defaultWidth)
         contentView = NSHostingView(rootView: ClockView(model: model))
         center()
         if let saved = UserDefaults.standard.string(forKey: "TimeFloat.frame") {
@@ -24,6 +24,13 @@ final class ClockPanel: NSPanel, NSWindowDelegate {
             if frame.width.isFinite, frame.height.isFinite, frame.origin.x.isFinite, frame.origin.y.isFinite {
                 setFrame(frame, display: false)
             }
+        }
+        // Existing installations started at 640pt; migrate once to the compact default.
+        if !UserDefaults.standard.bool(forKey: "TimeFloat.compactSizeMigrated") {
+            if frame.width > WindowGeometry.defaultWidth {
+                setContentSize(WindowGeometry.size(width: WindowGeometry.defaultWidth))
+            }
+            UserDefaults.standard.set(true, forKey: "TimeFloat.compactSizeMigrated")
         }
         fitToScreen()
         delegate = self
@@ -36,7 +43,7 @@ final class ClockPanel: NSPanel, NSWindowDelegate {
         if let screen { setFrame(WindowGeometry.fitted(frame, to: screen.visibleFrame), display: true) }
     }
     func resetPosition() {
-        setContentSize(WindowGeometry.size(width: 640))
+        setContentSize(WindowGeometry.size(width: WindowGeometry.defaultWidth))
         center()
         saveFrame()
     }

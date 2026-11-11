@@ -38,7 +38,7 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(frame.width / frame.height, WindowGeometry.aspectRatio, accuracy: 0.001)
     }
     func testResizeBoundsAndSmallScreen() {
-        XCTAssertEqual(WindowGeometry.size(width: 10).width, 300)
+        XCTAssertEqual(WindowGeometry.size(width: 10).width, 200)
         XCTAssertEqual(WindowGeometry.size(width: 9000).width, 1200)
         let screen = CGRect(x: 0, y: 0, width: 200, height: 100)
         XCTAssertTrue(screen.contains(WindowGeometry.fitted(CGRect(x: 0, y: 0, width: 640, height: 333), to: screen)))
