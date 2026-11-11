@@ -1,4 +1,5 @@
 import XCTest
+import CoreGraphics
 @testable import TimeFloatCore
 
 final class CoreTests: XCTestCase {

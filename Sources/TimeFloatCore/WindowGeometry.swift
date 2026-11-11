@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 public enum WindowGeometry {
     public static let aspectRatio: CGFloat = 1.92
