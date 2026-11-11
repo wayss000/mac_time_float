@@ -3,8 +3,8 @@ import SwiftUI
 struct GlassBackground: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
-        view.material = .hudWindow
-        view.appearance = NSAppearance(named: .darkAqua)
+        view.material = .underWindowBackground
+        view.appearance = NSAppearance(named: .aqua)
         view.blendingMode = .behindWindow
         view.state = .active
         return view
@@ -22,12 +22,12 @@ struct ClockView: View {
                     Text(model.formatter.timeString(timeline.date))
                         .font(.system(size: width * 0.17, weight: .semibold, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.black)
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                     Text(model.formatter.dateString(timeline.date))
                         .font(.system(size: width * 0.05, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.black.opacity(0.48))
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                 }
@@ -36,15 +36,15 @@ struct ClockView: View {
             }
             .background {
                 GlassBackground()
-                    .overlay(Color.black.opacity(model.settings.opacity * 0.7))
-                    .overlay(LinearGradient(colors: [.pink.opacity(0.09), .blue.opacity(0.08)], startPoint: .bottomLeading, endPoint: .topTrailing))
+                    // A thin white tint preserves the blurred colors behind the window.
+                    .overlay(Color.white.opacity(model.settings.opacity * 0.22))
             }
             .clipShape(RoundedRectangle(cornerRadius: width * 0.105, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: width * 0.105, style: .continuous)
-                .strokeBorder(.primary.opacity(0.2), lineWidth: 1))
+                .strokeBorder(Color.black.opacity(0.22), lineWidth: 1))
             .overlay { WindowInteractionSurface() }
         }
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, .light)
         .accessibilityLabel("TimeFloat 时钟")
     }
 }
