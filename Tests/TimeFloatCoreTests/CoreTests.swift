@@ -5,7 +5,7 @@ import CoreGraphics
 final class CoreTests: XCTestCase {
     func testTimeFormats() {
         let date = Date(timeIntervalSince1970: 15 * 3600 + 4 * 60 + 5)
-        var settings = Settings()
+        var settings = ClockSettings()
         let locale = Locale(identifier: "en_US_POSIX")
         let zone = TimeZone(secondsFromGMT: 0)!
         XCTAssertEqual(ClockFormatter(settings: settings, locale: locale, timeZone: zone).timeString(date), "15:04:05")
@@ -19,8 +19,8 @@ final class CoreTests: XCTestCase {
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
         let store = SettingsStore(defaults: defaults)
-        XCTAssertEqual(store.load(), Settings())
-        var settings = Settings()
+        XCTAssertEqual(store.load(), ClockSettings())
+        var settings = ClockSettings()
         settings.showSeconds = false
         settings.opacity = 0.5
         store.save(settings)
@@ -29,7 +29,7 @@ final class CoreTests: XCTestCase {
         store.save(settings)
         XCTAssertEqual(store.load().opacity, 1)
         defaults.set(Data("broken".utf8), forKey: "TimeFloat.settings")
-        XCTAssertEqual(store.load(), Settings())
+        XCTAssertEqual(store.load(), ClockSettings())
     }
     func testOffscreenWindowReturnsToVisibleScreen() {
         let screen = CGRect(x: -1440, y: 0, width: 1440, height: 900)

@@ -3,7 +3,7 @@ import Foundation
 public struct ClockFormatter {
     private let time: DateFormatter
     private let date: DateFormatter
-    public init(settings: Settings, locale: Locale = .current, timeZone: TimeZone = .current) {
+    public init(settings: ClockSettings, locale: Locale = .current, timeZone: TimeZone = .current) {
         time = DateFormatter()
         time.locale = locale
         time.timeZone = timeZone

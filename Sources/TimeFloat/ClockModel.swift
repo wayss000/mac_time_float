@@ -2,7 +2,7 @@ import SwiftUI
 import TimeFloatCore
 
 final class ClockModel: ObservableObject {
-    @Published var settings: Settings {
+    @Published var settings: ClockSettings {
         didSet { store.save(settings); formatter = ClockFormatter(settings: settings) }
     }
     private let store = SettingsStore()

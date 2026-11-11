@@ -29,7 +29,7 @@ final class ClockPanel: NSPanel, NSWindowDelegate {
         delegate = self
         apply(model.settings)
     }
-    func apply(_ settings: Settings) { level = settings.alwaysOnTop ? .floating : .normal }
+    func apply(_ settings: ClockSettings) { level = settings.alwaysOnTop ? .floating : .normal }
     func fitToScreen() {
         let screens = NSScreen.screens
         let screen = screens.first(where: { $0.visibleFrame.intersects(frame) }) ?? NSScreen.main
