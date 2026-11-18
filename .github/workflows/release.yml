@@ -1,0 +1,94 @@
+name: Release and download page
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Resolve version from tag
+        run: |
+          echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=${{ github.run_number }}" >> "$GITHUB_ENV"
+      - name: Build Apple Silicon app
+        run: scripts/build-app.sh arm64
+      - name: Build Intel app
+        run: scripts/build-app.sh x86_64
+      - name: Verify architectures
+        run: |
+          lipo build/arm64/TimeFloat.app/Contents/MacOS/TimeFloat -verify_arch arm64
+          lipo build/x86_64/TimeFloat.app/Contents/MacOS/TimeFloat -verify_arch x86_64
+      - name: Upload ZIPs
+        uses: actions/upload-artifact@v4
+        with:
+          name: TimeFloat-macOS
+          path: build/TimeFloat-macOS-*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: TimeFloat-macOS
+          path: artifacts
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/*.zip --clobber
+          else
+            gh release create "$TAG" artifacts/*.zip --title "TimeFloat $TAG" --generate-notes
+          fi
+
+  download-page:
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: TimeFloat-macOS
+          path: artifacts
+      - name: Read release time
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          echo "PUBLISHED_AT=$(gh release view "$TAG" --json publishedAt -q .publishedAt)" >> "$GITHUB_ENV"
+      - name: Render download page
+        env:
+          VERSION: ${{ github.ref_name }}
+          REPO_SLUG: ${{ github.repository }}
+          ARTIFACT_DIR: artifacts
+        run: scripts/generate-download-page.sh dist
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deploy
+        uses: actions/deploy-pages@v4

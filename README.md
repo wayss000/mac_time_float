@@ -4,11 +4,12 @@
 
 ## 下载使用
 
-1. 打开仓库的 **Actions → Build macOS app**，选择最新成功（绿色）的 `main` 构建。
-2. 在页面底部 **Artifacts** 下载 `TimeFloat-macOS`，解压后选择对应版本：
-   - `TimeFloat-macOS-arm64.zip`：Apple Silicon（M1/M2/M3/M4 等）。
-   - `TimeFloat-macOS-x86_64.zip`：Intel Mac。
-3. 解压内层 ZIP，将 `TimeFloat.app` 拖到“应用程序”，双击启动。
+打开 **<https://wayss000.github.io/mac_time_float/>**，页面会自动展示最新版本、发布时间和安装包大小，按芯片选择：
+
+- **Apple Silicon**（`TimeFloat-macOS-arm64.zip`）：M1/M2/M3/M4 等。
+- **Intel**（`TimeFloat-macOS-x86_64.zip`）：Intel Mac。
+
+下载后解压，将 `TimeFloat.app` 拖到“应用程序”，双击启动。历史版本见 [Releases](https://github.com/wayss000/mac_time_float/releases)。
 
 产物经过临时签名，但尚未使用 Apple Developer ID 签名或公证。如果系统阻止首次打开，在确认下载来源为本仓库后，前往“系统设置 → 隐私与安全性”选择“仍要打开”。
 
@@ -40,6 +41,21 @@ open build/arm64/TimeFloat.app
 
 推送到 `main` 自动运行测试，分别编译 Apple Silicon 和 Intel 应用、验证签名与架构，保存 ZIP 到 Actions Artifacts，保留 30 天。也支持 Actions 页面手动运行和 PR 检查。构建失败不会上传产物。下载 Actions 产物需要登录 GitHub。
 
+## 发布新版本
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+推送 `v*` tag 后 [release.yml](.github/workflows/release.yml) 会依次：
+
+1. 复用 `scripts/build-app.sh` 构建两个架构，`Info.plist` 中的版本号取自 tag；
+2. 创建 GitHub Release 并上传两个 ZIP；
+3. 读取 Release 的发布时间与文件大小，运行 `scripts/generate-download-page.sh` 渲染下载页并部署到 GitHub Pages。
+
+页面文件不需要手动修改。首次配置需在仓库 **Settings → Pages** 把 Source 设为 **GitHub Actions**。
+
 ## 目录
 
 ```text
@@ -47,5 +63,7 @@ Sources/TimeFloat/       AppKit 窗口、SwiftUI 界面、菜单与应用入口
 Sources/TimeFloatCore/   时间格式、设置保存、窗口几何计算
 Tests/TimeFloatCoreTests/ 核心逻辑测试
 scripts/build-app.sh     Release 编译、打包和临时签名
-.github/workflows/       GitHub Actions 自动构建
+scripts/generate-download-page.sh  按 Release 数据渲染下载页
+docs/index.html          下载页模板
+.github/workflows/       GitHub Actions 自动构建与发版
 ```
