@@ -1,0 +1,51 @@
+name: Deploy download page
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/index.html
+      - scripts/generate-download-page.sh
+      - .github/workflows/download-page.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download latest release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release download --dir artifacts --pattern "*.zip"
+      - name: Render download page
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REPO_SLUG: ${{ github.repository }}
+          ARTIFACT_DIR: artifacts
+        run: |
+          VERSION="$(gh release view --json tagName -q .tagName)"
+          PUBLISHED_AT="$(gh release view --json publishedAt -q .publishedAt)"
+          export VERSION PUBLISHED_AT
+          scripts/generate-download-page.sh dist
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -85,6 +85,7 @@ while IFS= read -r line || [ -n "$line" ]; do
   line="${line//\{\{ARM64_URL\}\}/$ARM64_URL}"
   line="${line//\{\{X86_URL\}\}/$X86_URL}"
   line="${line//\{\{REPO_URL\}\}/$REPO_URL}"
+  line="${line//\{\{REPO_SLUG\}\}/$REPO_SLUG}"
   line="${line//\{\{RELEASES_URL\}\}/$RELEASES_URL}"
   printf '%s\n' "$line"
 done < "$TEMPLATE" > "$OUT/index.html"
